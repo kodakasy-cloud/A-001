@@ -1,0 +1,26 @@
+meu_app_flet/
+│
+├── .env                  # Arquivo secreto: guarda chaves de criptografia (NUNCA envie para o GitHub)
+├── .gitignore            # Diz ao Git para ignorar arquivos sensíveis como .env e bancos de dados
+├── requirements.txt      # Lista de bibliotecas usadas (Flet, etc.)
+│
+├── README.md             # Documentação do projeto
+│
+└── src/                  # Código-fonte principal do aplicativo
+    ├──🔥 main.py           # Ponto de entrada do aplicativo (inicia o Flet)
+    │
+    ├──🔥 database/         # Gerenciamento de dados locais
+    │   ├── __init__.py
+    │   └── local_db.py   # Conexão com o banco local (ex: SQLite)
+    │
+    ├──🔥 security/         # Onde a mágica da segurança acontece
+    │   ├── __init__.py
+    │   └── crypto.py     # Funções para criptografar e descriptografar dados antes de salvar
+    │
+    ├──🔥 views/            # Telas do aplicativo (Interface Gráfica)
+    │   ├── __init__.py
+    │   ├── login_view.py # Tela de autenticação local
+    │   └── home_view.py  # Tela principal
+    │
+    └──🔥 utils/            # Funções de ajuda (verificadores, formatadores)
+        └── updater.py    # Lógica futura para checar e baixar atualizações online
