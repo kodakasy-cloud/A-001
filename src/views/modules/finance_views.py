@@ -1,10 +1,9 @@
 import flet as ft #type: ignore
-
-# Lista temporária na memória para guardar os valores simulados
-FINANCAS_TEMPORARIAS = []
+# Importa as funções de banco de dados seguro do seu projeto usando o caminho absoluto
+from database.local_db import salvar_dados_seguros, carregar_dados_seguros
 
 def finance_views(page: ft.Page):
-    """Gera a interface visual das finanças no padrão Premium Minimalista e Anti-Bugs."""
+    """Gera a interface visual das finanças no padrão Premium Minimalista, Criptografada e Anti-Bugs."""
     
     # --- PALETA DE CORES PREMIUM ---
     BG_PRINCIPAL = "#0B0B0C"        # Preto Absoluto
@@ -62,9 +61,22 @@ def finance_views(page: ft.Page):
     # Coluna interna animada para renderizar o extrato de movimentações
     lista_historico_ui = ft.Column(spacing=8, animate_opacity=200)
 
-    def deletar_movimentacao(item):
-        """Remove um lançamento do fluxo e recalcula o painel."""
-        FINANCAS_TEMPORARIAS.remove(item)
+    def deletar_movimentacao(item_dados):
+        """Remove um lançamento do arquivo encriptado exclusivo de finanças e recalcula o painel."""
+        # 1. Carrega os dados do arquivo criptografado próprio de finanças
+        dados_salvos = carregar_dados_seguros("financas_data")
+        transacoes_lista = dados_salvos.get("transacoes", [])
+        
+        # 2. Filtra a lista removendo o item correspondente de forma exata
+        transacoes_filtradas = [
+            t for t in transacoes_lista 
+            if not (t["categoria"] == item_dados["categoria"] and t["valor"] == item_dados["valor"] and t["tipo"] == item_dados["tipo"])
+        ]
+        
+        # 3. Salva de volta no arquivo exclusivo encriptado de finanças
+        dados_salvos["transacoes"] = transacoes_filtradas
+        salvar_dados_seguros("financas_data", dados_salvos)
+        
         calcular_e_atualizar_painel()
         
         page.snack_bar = ft.SnackBar(ft.Text("Registro financeiro removido.", color=BRANCO_PURO), bgcolor=BG_CARD)
@@ -72,15 +84,19 @@ def finance_views(page: ft.Page):
         page.update()
 
     def calcular_e_atualizar_painel():
-        """Faz os cálculos matemáticos e atualiza o balanço e a lista histórica."""
+        """Lê as transações criptografadas, faz os cálculos matemáticos e renderiza o extrato."""
         total_receitas = 0.0
         total_despesas = 0.0
 
         # Limpa o histórico visual para reconstrução
         lista_historico_ui.controls.clear()
 
-        # Calcula e reconstrói o extrato de trás para frente (mais recente primeiro)
-        for item in reversed(FINANCAS_TEMPORARIAS):
+        # Busca a lista direto do arquivo de dados exclusivo de finanças
+        dados_salvos = carregar_dados_seguros("financas_data")
+        transacoes_lista = dados_salvos.get("transacoes", [])
+
+        # Calcula e reconstrói o extrato (os itens já estão em ordem cronológica de inserção)
+        for item in transacoes_lista:
             eh_receita = item["tipo"] == "Receita"
             cor_indicador = VERDE_SUCESSO if eh_receita else VERMELHO_ALERTA
             simbolo = "+" if eh_receita else "-"
@@ -132,7 +148,7 @@ def finance_views(page: ft.Page):
         txt_saldo.value = f"R$ {saldo_final:.2f}"
         txt_saldo.color = VERDE_SUCESSO if saldo_final >= 0 else VERMELHO_ALERTA
         
-        if not FINANCAS_TEMPORARIAS:
+        if not transacoes_lista:
             lista_historico_ui.controls.append(
                 ft.Container(
                     content=ft.Text("Nenhuma transação registrada no extrato.", color=PRATA_TEXTO, size=12, italic=True),
@@ -145,7 +161,7 @@ def finance_views(page: ft.Page):
             lista_historico_ui.update()
 
     def lancar_movimentacao_click(e):
-        """Valida as entradas numéricas de forma segura contra falhas de digitação."""
+        """Valida as entradas, criptografa e insere o fluxo direto em financas_data.json."""
         if not txt_valor.value or not txt_categoria.value:
             page.snack_bar = ft.SnackBar(ft.Text("Erro: Insira um Valor e uma Categoria."), bgcolor="#7F1D1D")
             page.snack_bar.open = True
@@ -162,12 +178,25 @@ def finance_views(page: ft.Page):
             page.update()
             return
 
-        # Guarda dados na memória global
-        FINANCAS_TEMPORARIAS.append({
+        # 1. Carrega os registros do arquivo exclusivo de finanças
+        dados_salvos = carregar_dados_seguros("financas_data")
+        
+        # Inicializa a estrutura interna de transações caso o arquivo tenha sido criado agora
+        if "transacoes" not in dados_salvos:
+            dados_salvos["transacoes"] = []
+            
+        transacoes_lista = dados_salvos["transacoes"]
+
+        # 2. Insere o novo registro no topo do índice da lista (para mostrar o mais recente primeiro)
+        transacoes_lista.insert(0, {
             "tipo": drop_tipo.value,
             "valor": valor_float,
             "categoria": txt_categoria.value
         })
+
+        # 3. Salva no arquivo independente encriptado
+        dados_salvos["transacoes"] = transacoes_lista
+        salvar_dados_seguros("financas_data", dados_salvos)
 
         # Limpeza e reset de foco pós-lançamento (oculta teclado mobile)
         txt_valor.value = ""
@@ -181,7 +210,7 @@ def finance_views(page: ft.Page):
         page.snack_bar.open = True
         page.update()
 
-    # Executa o cálculo inicial da view
+    # Executa o cálculo e leitura inicial dos dados salvos no JSON encriptado
     calcular_e_atualizar_painel()
 
     # --- ESTRUTURA DE LAYOUT RESPONSIVA COMPATÍVEL ---

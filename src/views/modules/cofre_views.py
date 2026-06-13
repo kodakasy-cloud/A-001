@@ -1,19 +1,17 @@
 import flet as ft # type: ignore
 
+# CORREÇÃO CRÍTICA: Removido o prefixo "src." para o PyInstaller localizar o módulo no .exe
+from database.local_db import salvar_dados_seguros, carregar_dados_seguros
+
 def cofre_views(page: ft.Page):
     
     # --- PALETA DE CORES PREMIUM ---
-    BG_PRINCIPAL = "#0B0B0C"        # Preto Absoluto
-    BG_CARD = "#161618"             # Grafite Escuro
-    PRATA_BORDA = "#2D2D30"         # Prata Escuro para linhas discretas
-    PRATA_TEXTO = "#A1A1AA"         # Prata para labels secundárias
-    BRANCO_PURO = "#FFFFFF"         # Branco Puro para títulos e destaque
-    VERMELHO_DESTRUTIVO = "#EF4444" # Vermelho para exclusão
-
-    # --- ESTADO TEMPORÁRIO DOS BLOCOS ---
-    blocos_dados = [
-        {"id": 1, "titulo": "Exemplo", "texto": "Exemplo ✈️", "cor": "#1C1C1E", "emoji": "✈️"},
-    ]
+    BG_PRINCIPAL = "#0B0B0C"        
+    BG_CARD = "#161618"             
+    PRATA_BORDA = "#2D2D30"         
+    PRATA_TEXTO = "#A1A1AA"         
+    BRANCO_PURO = "#FFFFFF"         
+    VERMELHO_DESTRUTIVO = "#EF4444" 
     
     bloco_selecionado = {"id": None}
 
@@ -69,7 +67,6 @@ def cofre_views(page: ft.Page):
         txt_conteudo.bgcolor = cor_hex
         txt_conteudo.color = obter_cor_texto(cor_hex)
         
-        # Feedback interativo: atualiza as bordas dos círculos de cor
         for item in linha_cores.controls:
             item.border = ft.border.all(2, BRANCO_PURO if item.data == cor_hex else PRATA_BORDA)
             
@@ -79,9 +76,13 @@ def cofre_views(page: ft.Page):
         txt_conteudo.value = (txt_conteudo.value or "") + e.control.data
         txt_conteudo.update()
 
+    # --- LÓGICA DO COFRE CRIPTOGRAFADO ---
     def salvar_bloco(e):
         if not txt_titulo.value:
             return
+        
+        dados_salvos = carregar_dados_seguros("cofre_notas") or {}
+        blocos_dados = dados_salvos.get("notas", [])
         
         if bloco_selecionado["id"] is None:
             novo_id = max([b["id"] for b in blocos_dados]) + 1 if blocos_dados else 1
@@ -99,6 +100,9 @@ def cofre_views(page: ft.Page):
                     b["texto"] = txt_conteudo.value
                     b["cor"] = cor_selecionada.value
         
+        dados_salvos["notas"] = blocos_dados
+        salvar_dados_seguros("cofre_notas", dados_salvos)
+        
         limpar_formulario()
         renderizar_blocos()
 
@@ -110,24 +114,36 @@ def cofre_views(page: ft.Page):
         txt_conteudo.color = obter_cor_texto(bloco["cor"])
         cor_selecionada.value = bloco["cor"]
         
-        # Feedback visual de seleção na paleta
         for item in linha_cores.controls:
             item.border = ft.border.all(2, BRANCO_PURO if item.data == bloco["cor"] else PRATA_BORDA)
             
         page.update()
 
     def excluir_bloco(bloco_id):
-        nonlocal blocos_dados
-        blocos_dados = [b for b in blocos_dados if b["id"] != bloco_id]
+        dados_salvos = carregar_dados_seguros("cofre_notas") or {}
+        blocos_dados = dados_salvos.get("notas", [])
+        
+        blocos_filtrados = [b for b in blocos_dados if b["id"] != bloco_id]
+        
+        dados_salvos["notas"] = blocos_filtrados
+        salvar_dados_seguros("cofre_notas", dados_salvos)
+        
         if bloco_selecionado["id"] == bloco_id:
             limpar_formulario()
+            
         renderizar_blocos()
 
     def mover_bloco(index, direcao):
+        dados_salvos = carregar_dados_seguros("cofre_notas") or {}
+        blocos_dados = dados_salvos.get("notas", [])
+        
         if direcao == "esquerda" and index > 0:
             blocos_dados[index], blocos_dados[index - 1] = blocos_dados[index - 1], blocos_dados[index]
         elif direcao == "direita" and index < len(blocos_dados) - 1:
             blocos_dados[index], blocos_dados[index + 1] = blocos_dados[index + 1], blocos_dados[index]
+            
+        dados_salvos["notas"] = blocos_dados
+        salvar_dados_seguros("cofre_notas", dados_salvos)
         renderizar_blocos()
 
     def limpar_formulario():
@@ -147,14 +163,20 @@ def cofre_views(page: ft.Page):
     def renderizar_blocos():
         linha_blocos.controls.clear()
         
+        dados_salvos = carregar_dados_seguros("cofre_notas") or {}
+        blocos_dados = dados_salvos.get("notas", [])
+        
         for i, b in enumerate(blocos_dados):
             cor_do_texto = obter_cor_texto(b["cor"])
             cor_setas = PRATA_TEXTO if cor_do_texto == BRANCO_PURO else BG_PRINCIPAL
             
+            # Correção para evitar o crash de escopo da função lambda
+            current_id = b["id"]
+            current_block = b
+            
             linha_blocos.controls.append(
                 ft.Container(
                     content=ft.Column([
-                        # Cabeçalho do Card
                         ft.Row([
                             ft.Row([
                                 ft.Text(b["emoji"], size=13), 
@@ -165,27 +187,25 @@ def cofre_views(page: ft.Page):
                                 icon_color=VERMELHO_DESTRUTIVO, 
                                 icon_size=15, 
                                 padding=2,
-                                on_click=lambda e, b_id=b["id"]: excluir_bloco(b_id)
+                                on_click=lambda e, b_id=current_id: excluir_bloco(b_id)
                             )
                         ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN, spacing=0),
                         
-                        # Corpo do Texto Interativo
                         ft.GestureDetector(
                             content=ft.Container(
                                 content=ft.Text(b["texto"], max_lines=2, overflow=ft.TextOverflow.ELLIPSIS, size=11, color=cor_do_texto),
                                 height=38,
                                 alignment=ft.alignment.top_left
                             ),
-                            on_tap=lambda e, bloco=b: carregar_bloco(bloco)
+                            on_tap=lambda e, bloco=current_block: carregar_bloco(bloco)
                         ),
                         
-                        # Rodapé com Navegadores
                         ft.Row([
                             ft.Row([
                                 ft.IconButton(ft.Icons.KEYBOARD_ARROW_LEFT_ROUNDED, icon_color=cor_setas, icon_size=16, disabled=(i == 0), padding=2, on_click=lambda e, idx=i: mover_bloco(idx, "esquerda")),
                                 ft.IconButton(ft.Icons.KEYBOARD_ARROW_RIGHT_ROUNDED, icon_color=cor_setas, icon_size=16, disabled=(i == len(blocos_dados) - 1), padding=2, on_click=lambda e, idx=i: mover_bloco(idx, "direita")),
                             ], spacing=0),
-                            ft.IconButton(ft.Icons.OPEN_IN_NEW_ROUNDED, icon_color=cor_setas, icon_size=13, on_click=lambda e, bloco=b: carregar_bloco(bloco))
+                            ft.IconButton(ft.Icons.OPEN_IN_NEW_ROUNDED, icon_color=cor_setas, icon_size=13, on_click=lambda e, bloco=current_block: carregar_bloco(bloco))
                         ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
                     ], spacing=2, alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                     width=145,
@@ -194,13 +214,12 @@ def cofre_views(page: ft.Page):
                     border_radius=12,
                     padding=8,
                     border=ft.border.all(1, PRATA_BORDA),
-                    animate=ft.Animation(250, ft.AnimationCurve.DECELERATE), # Animação de entrada suave
+                    animate=ft.Animation(250, ft.AnimationCurve.DECELERATE),
                 )
             )
         if linha_blocos.page:
             linha_blocos.update()
 
-    # Seletor de Cores - Escala Corporativa Monocromática com feedback tátil
     cores_disponiveis = ["#121214", "#1C1C1E", "#252529", "#2C2C30", "#3A3A3C", "#48484A", "#A1A1AA", "#FFFFFF"]
     linha_cores = ft.Row([
         ft.Container(
@@ -210,7 +229,6 @@ def cofre_views(page: ft.Page):
         ) for cor in cores_disponiveis
     ], wrap=True, spacing=8)
 
-    # Emojis estruturados em containers consistentes para toque Mobile
     emojis = ["🔐", "💼", "💡", "🎯", "📝", "🚀", "💎", "🔋"]
     linha_emojis = ft.Row([
         ft.Container(
@@ -228,7 +246,6 @@ def cofre_views(page: ft.Page):
 
     renderizar_blocos()
 
-    # --- ENGENHARIA DE LAYOUT (ANTI-BUG MOBILE) ---
     return ft.View(
         route="/cofre",
         bgcolor=BG_PRINCIPAL,
@@ -242,11 +259,9 @@ def cofre_views(page: ft.Page):
             ),
             ft.Divider(color=PRATA_BORDA, height=1),
             
-            # O uso do Container com ListView impede falhas de layout no Android ao subir o teclado
             ft.Container(
                 content=ft.ListView(
                     controls=[
-                        # Seção 1
                         ft.Text("CONTEÚDOS ENCRIPTADOS", size=10, weight=ft.FontWeight.W_700, color=PRATA_TEXTO),
                         ft.Container(height=4),
                         linha_blocos,
@@ -255,7 +270,6 @@ def cofre_views(page: ft.Page):
                         ft.Divider(color=PRATA_BORDA, height=1),
                         ft.Container(height=12),
                         
-                        # Seção 2: Inputs com espaçamento confortável para touch
                         ft.Text("COMPILADOR DE ENTRADA", size=10, weight=ft.FontWeight.W_700, color=PRATA_TEXTO),
                         ft.Container(height=6),
                         txt_titulo,
@@ -274,7 +288,6 @@ def cofre_views(page: ft.Page):
                         
                         ft.Container(height=20),
                         
-                        # Ações com botões grandes e fáceis de clicar no Mobile
                         ft.Row([
                             ft.TextButton(
                                 text="Limpar Painel", 
@@ -293,7 +306,6 @@ def cofre_views(page: ft.Page):
                             ),
                         ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                         
-                        # Margem de segurança extra para o scroll do teclado no Android
                         ft.Container(height=40)
                     ],
                 ),

@@ -1,7 +1,6 @@
 import flet as ft #type: ignore
-
-# Lista temporária na memória para guardar os eventos enquanto o app está aberto
-EVENTOS_TEMPORARIOS = []
+# Importa as funções de banco de dados seguro do seu projeto usando o caminho absoluto
+from database.local_db import salvar_dados_seguros, carregar_dados_seguros
 
 def eventos_views(page: ft.Page):
     """Gera a interface visual da tela de Eventos no estilo Premium Minimalista Ultra-Responsivo."""
@@ -57,8 +56,21 @@ def eventos_views(page: ft.Page):
     lista_eventos_ui = ft.Column(spacing=10, animate_opacity=250)
 
     def deletar_evento(ev_dados):
-        """Remove o evento da lista com efeito visual rápido."""
-        EVENTOS_TEMPORARIOS.remove(ev_dados)
+        """Remove o evento do arquivo encriptado exclusivo de eventos."""
+        # 1. Carrega os dados do arquivo criptografado próprio de eventos
+        dados_salvos = carregar_dados_seguros("eventos_data")
+        eventos_lista = dados_salvos.get("eventos", [])
+        
+        # 2. Filtra a lista removendo o item correspondente
+        eventos_filtrados = [
+            ev for ev in eventos_lista 
+            if not (ev["titulo"] == ev_dados["titulo"] and ev["data"] == ev_dados["data"])
+        ]
+        
+        # 3. Salva de volta no arquivo exclusivo encriptado de eventos
+        dados_salvos["eventos"] = eventos_filtrados
+        salvar_dados_seguros("eventos_data", dados_salvos)
+        
         atualizar_lista_na_tela()
         
         page.snack_bar = ft.SnackBar(
@@ -69,10 +81,14 @@ def eventos_views(page: ft.Page):
         page.update()
 
     def atualizar_lista_na_tela():
-        """Limpa a tela e redesenha a lista aplicando curvas de animação EASE."""
+        """Lê o arquivo encriptado próprio de eventos e renderiza na interface."""
         lista_eventos_ui.controls.clear()
         
-        if not EVENTOS_TEMPORARIOS:
+        # Busca a lista direto do arquivo de dados exclusivo de eventos
+        dados_salvos = carregar_dados_seguros("eventos_data")
+        eventos_lista = dados_salvos.get("eventos", [])
+        
+        if not eventos_lista:
             lista_eventos_ui.controls.append(
                 ft.Container(
                     content=ft.Text("Nenhum evento agendado no registro.", color=PRATA_TEXTO, size=13, italic=True),
@@ -81,8 +97,7 @@ def eventos_views(page: ft.Page):
                 )
             )
         else:
-            for ev in EVENTOS_TEMPORARIOS:
-                # Estrutura do card com suporte a interações premium
+            for ev in eventos_lista:
                 card_evento = ft.Container(
                     content=ft.Column([
                         ft.Row([
@@ -124,25 +139,38 @@ def eventos_views(page: ft.Page):
             lista_eventos_ui.update()
 
     def cadastrar_evento_click(e):
-        """Valida, limpa os campos e injeta o evento com segurança contra travamentos."""
+        """Valida, criptografa e injeta o evento direto no arquivo local exclusivo eventos_data.json."""
         if not txt_titulo.value or not txt_data.value:
             page.snack_bar = ft.SnackBar(ft.Text("Erro operacional: Título e Data são obrigatórios."), bgcolor="#451A03")
             page.snack_bar.open = True
             page.update()
             return
         
-        # Insere no topo da lista para destacar o último adicionado
-        EVENTOS_TEMPORARIOS.insert(0, {
+        # 1. Carrega os registros do arquivo exclusivo de eventos
+        dados_salvos = carregar_dados_seguros("eventos_data")
+        
+        # Inicializa a estrutura de lista caso o arquivo tenha sido criado agora
+        if "eventos" not in dados_salvos:
+            dados_salvos["eventos"] = []
+            
+        eventos_lista = dados_salvos["eventos"]
+        
+        # 2. Insere o novo registro no topo do índice da lista
+        eventos_lista.insert(0, {
             "titulo": txt_titulo.value,
             "data": txt_data.value,
             "descricao": txt_descricao.value
         })
         
+        # 3. Salva no arquivo independente e criptografado
+        dados_salvos["eventos"] = eventos_lista
+        salvar_dados_seguros("eventos_data", dados_salvos)
+        
+        # Limpa os campos visuais de entrada
         txt_titulo.value = ""
         txt_descricao.value = ""
         txt_data.value = ""
         
-        # Desfoca os campos para ocultar o teclado mobile automaticamente após salvar
         txt_titulo.focus()
         txt_titulo.blur()
         
@@ -155,10 +183,10 @@ def eventos_views(page: ft.Page):
         page.snack_bar.open = True
         page.update()
 
-    # Renderiza os dados iniciais salvos em memória
+    # Renderiza os dados lendo o arquivo encriptado local imediatamente
     atualizar_lista_na_tela()
 
-    # --- FOLHA DE ESTILO CONTAINER RESPONSIVO CORRIGIDA (Sem max_width) ---
+    # --- FOLHA DE ESTILO CONTAINER RESPONSIVO ---
     conteudo_responsivo = ft.Container(
         content=ft.ListView(
             controls=[
@@ -189,14 +217,14 @@ def eventos_views(page: ft.Page):
                 ft.Container(height=8),
                 lista_eventos_ui,
                 
-                # Padding tático inferior para que nenhuma barra de navegação mobile corte o conteúdo
+                # Padding tático inferior para evitar corte de conteúdo
                 ft.Container(height=50)
             ],
             spacing=0,
         ),
         padding=16,
         expand=True,
-        width=420, # Define a largura ideal estável para mobile e PC sem estourar
+        width=420,
         alignment=ft.alignment.top_center
     )
 
@@ -217,7 +245,6 @@ def eventos_views(page: ft.Page):
                 )
             ),
             ft.Divider(color=PRATA_BORDA, height=1),
-            # Alinha o conteúdo responsivo centralizado na tela inteira
             ft.Row(
                 controls=[conteudo_responsivo],
                 alignment=ft.MainAxisAlignment.CENTER,
