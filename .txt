@@ -17,7 +17,11 @@ meu_app_flet/
     │   ├── __init__.py
     │   └── crypto.py     # Funções para criptografar e descriptografar dados antes de salvar
     │
-    ├──🔥 views/            # Telas do aplicativo (Interface Gráfica)
+    ├──🔥 views/
+    ├── ├──modules/          
+        ├── ├──├── cofre_views.py        
+        ├── ├──├── eventos_views.py    
+        ├── ├──├── finance_views.py
     │   ├── __init__.py
     │   ├── login_view.py # Tela de autenticação local
     │   └── home_view.py  # Tela principal

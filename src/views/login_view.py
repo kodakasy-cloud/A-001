@@ -44,15 +44,8 @@ def login_view(page: ft.Page):
         if txt_senha.value == senha_correta:
             lbl_erro.value = ""
             
-            conteudo_login.content = ft.Column(
-                controls=[
-                    ft.ProgressRing(width=40, height=40, stroke_width=3, color=BRANCO_PURO),
-                    ft.Container(height=15),
-                    ft.Text("Autenticando ambiente...", color=PRATA_TEXTO, size=14, weight=ft.FontWeight.W_500)
-                ],
-                alignment=ft.MainAxisAlignment.CENTER,
-                horizontal_alignment=ft.CrossAxisAlignment.CENTER
-            )
+            # Alterna para o layout de carregamento isolado
+            conteudo_login.content = layout_loading
             page.update()
             
             await asyncio.sleep(1.5)
@@ -66,6 +59,7 @@ def login_view(page: ft.Page):
         btn_mostrar_teclado.text = "Ocultar Teclado Virtual" if container_teclado.visible else "Usar Teclado Virtual"
         page.update()
 
+    # Botões do teclado virtual
     botoes = []
     for i in range(1, 10):
         botoes.append(
@@ -77,65 +71,20 @@ def login_view(page: ft.Page):
                 bgcolor="#1C1C1E",
                 data=str(i),
                 on_click=btn_teclado_virtual,
-                width=50, # Reduzido ligeiramente para Androids menores
+                width=50,
                 height=50,
             )
         )
     
-    botoes.append(
-        ft.Container(
-            content=ft.Icon(ft.Icons.CLEAR, color=PRATA_TEXTO, size=20),
-            alignment=ft.alignment.center,
-            shape=ft.BoxShape.CIRCLE,
-            data="limpar",
-            on_click=btn_teclado_virtual,
-            width=50,
-            height=50,
-        )
-    )
-    
-    botoes.append(
-        ft.Container(
-            content=ft.Text("0", size=18, weight=ft.FontWeight.BOLD, color=BRANCO_PURO),
-            alignment=ft.alignment.center,
-            shape=ft.BoxShape.CIRCLE,
-            border=ft.border.all(1, PRATA_BORDA),
-            bgcolor="#1C1C1E",
-            data="0",
-            on_click=btn_teclado_virtual,
-            width=50,
-            height=50,
-        )
-    )
-    
-    botoes.append(
-        ft.Container(
-            content=ft.Icon(ft.Icons.BACKSPACE_OUTLINED, color=PRATA_TEXTO, size=18),
-            alignment=ft.alignment.center,
-            shape=ft.BoxShape.CIRCLE,
-            data="apagar",
-            on_click=btn_teclado_virtual,
-            width=50,
-            height=50,
-        )
-    )
+    botoes.append(ft.Container(content=ft.Icon(ft.Icons.CLEAR, color=PRATA_TEXTO, size=20), alignment=ft.alignment.center, shape=ft.BoxShape.CIRCLE, data="limpar", on_click=btn_teclado_virtual, width=50, height=50))
+    botoes.append(ft.Container(content=ft.Text("0", size=18, weight=ft.FontWeight.BOLD, color=BRANCO_PURO), alignment=ft.alignment.center, shape=ft.BoxShape.CIRCLE, border=ft.border.all(1, PRATA_BORDA), bgcolor="#1C1C1E", data="0", on_click=btn_teclado_virtual, width=50, height=50))
+    botoes.append(ft.Container(content=ft.Icon(ft.Icons.BACKSPACE_OUTLINED, color=PRATA_TEXTO, size=18), alignment=ft.alignment.center, shape=ft.BoxShape.CIRCLE, data="apagar", on_click=btn_teclado_virtual, width=50, height=50))
 
     grid_teclado = ft.GridView(
-        controls=botoes,
-        runs_count=3,
-        max_extent=55,  
-        child_aspect_ratio=1.0,  
-        spacing=10,
-        run_spacing=10,
-        width=190, # Mais estreito para evitar overflow lateral
-        height=250,
+        controls=botoes, runs_count=3, max_extent=55, child_aspect_ratio=1.0, spacing=10, run_spacing=10, width=190, height=250,
     )
 
-    container_teclado = ft.Container(
-        content=grid_teclado,
-        visible=False, 
-        margin=ft.margin.only(top=5, bottom=5)
-    )
+    container_teclado = ft.Container(content=grid_teclado, visible=False, margin=ft.margin.only(top=5, bottom=5))
 
     btn_mostrar_teclado = ft.TextButton(
         text="Usar Teclado Virtual",
@@ -144,21 +93,15 @@ def login_view(page: ft.Page):
         on_click=alternar_teclado
     )
 
-    # --- CORREÇÃO DO BUG (Layout com Scroll Interno) ---
-    # Usar ft.ListView garante que o Android consiga rolar os elementos se o teclado físico/nativo subir
-    layout_scrollavel = ft.ListView(
+    # --- LAYOUT 1: FORMULÁRIO DE LOGIN ---
+    layout_formulario = ft.ListView(
         controls=[
             ft.Container(
                 content=ft.Column(
                     controls=[
                         ft.Container(
                             content=ft.Icon(ft.Icons.LOCK_PERSON_OUTLINED, size=36, color=BRANCO_PURO),
-                            alignment=ft.alignment.center,
-                            width=70,
-                            height=70,
-                            border_radius=35,
-                            border=ft.border.all(1, PRATA_BORDA),
-                            bgcolor="#1C1C1E"
+                            alignment=ft.alignment.center, width=70, height=70, border_radius=35, border=ft.border.all(1, PRATA_BORDA), bgcolor="#1C1C1E"
                         ),
                         ft.Container(height=5),
                         ft.Text("Acesso Restrito", size=22, weight=ft.FontWeight.W_700, color=BRANCO_PURO),
@@ -169,31 +112,42 @@ def login_view(page: ft.Page):
                         btn_mostrar_teclado, 
                         container_teclado,   
                         ft.Container(height=5),
-                        
                         ft.Container(
                             content=ft.Text("Entrar", weight=ft.FontWeight.W_600, color=BG_PRINCIPAL, size=14),
-                            alignment=ft.alignment.center,
-                            height=46,
-                            width=280,
-                            bgcolor=BRANCO_PURO,
-                            border_radius=8,
-                            on_click=verificar_senha,
+                            alignment=ft.alignment.center, height=46, width=280, bgcolor=BRANCO_PURO, border_radius=8, on_click=verificar_senha,
                         ),
                     ],
                     alignment=ft.MainAxisAlignment.CENTER,
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 ),
                 alignment=ft.alignment.center,
-                padding=ft.padding.only(top=20, bottom=40) # Margem extra no fundo para não cobrir o botão entrar
+                padding=ft.padding.only(top=20, bottom=40)
             )
         ],
         expand=True,
     )
 
+    # --- LAYOUT 2: CARREGAMENTO INDEPENDENTE (Corrigido sem letter_spacing) ---
+    layout_loading = ft.Container(
+        content=ft.Column(
+            controls=[
+                ft.ProgressRing(width=44, height=44, stroke_width=3, color=BRANCO_PURO),
+                ft.Container(height=15),
+                ft.Text("Descriptografando ambiente...", color=PRATA_TEXTO, size=14, weight=ft.FontWeight.W_500)
+            ],
+            alignment=ft.MainAxisAlignment.CENTER,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER
+        ),
+        alignment=ft.alignment.center,
+        expand=True
+    )
+
+    # --- CONTROLADOR DE ANIMAÇÃO ---
     conteudo_login = ft.AnimatedSwitcher(
-        content=layout_scrollavel,
-        transition=ft.AnimatedSwitcherTransition.SCALE,  
-        duration=300,  
+        content=layout_formulario, 
+        transition=ft.AnimatedSwitcherTransition.FADE,  
+        duration=250,  
+        reverse_duration=200,
     )
 
     return ft.View(

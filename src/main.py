@@ -11,7 +11,7 @@ from views.modules.eventos_views import eventos_views
 def main(page: ft.Page):
 
     # CONFIGURAÇÃO PADRÃO DAS PÁGINAS
-    page.title = "Nother Segury"
+    page.title = "Nother"
     page.theme_mode = ft.ThemeMode.DARK
     
     # Verifica se o app foi iniciado em modo mobile
