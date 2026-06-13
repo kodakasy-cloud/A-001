@@ -1,0 +1,47 @@
+# --- SEGURANÇA (CRÍTICO) ---
+# Nunca envie suas chaves de criptografia e senhas para o GitHub
+.env
+*.key
+*.pem
+
+# --- COMPILAÇÃO E EXECUTÁVEIS (FLET / PYINSTALLER / FLUTTER) ---
+# Impede que arquivos de mais de 100MB travem o push do GitHub
+src/build/
+src/dist/
+build/
+dist/
+*.exe
+*.apk
+*.ipa
+*.app
+.flet/
+
+# --- BANCO DE DADOS LOCAL ---
+# Ignora os arquivos JSON ou SQLite gerados localmente para que os dados 
+# dos seus usuários de teste não parem no repositório público
+src/database/*.json
+src/database/*.db
+src/database/*.sqlite
+
+# --- PYTHON (ARQUIVOS TEMPORÁRIOS) ---
+# Pastas de cache que o Python cria automaticamente ao rodar o código
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.pyenv/
+
+# --- AMBIENTE VIRTUAL ---
+# Não envie a pasta do seu ambiente virtual (ela é recriada com o requirements.txt)
+.venv/
+venv/
+env/
+ENV/
+
+# --- SISTEMA OPERACIONAL ---
+# Arquivos inúteis que o Windows e o Mac criam nas pastas
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
