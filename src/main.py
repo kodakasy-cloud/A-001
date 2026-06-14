@@ -8,10 +8,10 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # --- IMPORTS DAS VIEWS (Sem duplicatas) ---
 from views.login_view import login_view
 from views.home_view import home_view
-from views.modules.cofre_views import cofre_views
-from views.modules.finance_views import finance_views
-from views.modules.eventos_views import eventos_views
-from views.modules.settings_view import settings_view
+from views.modules.notas.notas_views import cofre_views
+from views.modules.finances.finance_views import finance_views
+from views.modules.eventos.eventos_views import eventos_views
+from views.modules.settings.settings_view import settings_view
 
 
 def main(page: ft.Page):

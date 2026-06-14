@@ -154,7 +154,7 @@ def login_view(page: ft.Page):
         controls=botoes, 
         runs_count=3, 
         max_extent=48, 
-        child_aspect_ratio=1.0, 
+        child_aspect_ratio=1.0,
         spacing=8, 
         run_spacing=8, 
         width=160, 

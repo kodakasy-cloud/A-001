@@ -1,30 +1,32 @@
-meu_app_flet/
+# 📂 Project Structure
+
+my_flet_app/
 │
-├── .env                  # Arquivo secreto: guarda chaves de criptografia (NUNCA envie para o GitHub)
-├── .gitignore            # Diz ao Git para ignorar arquivos sensíveis como .env e bancos de dados
-├── requirements.txt      # Lista de bibliotecas usadas (Flet, etc.)
+├── .env
+├── .gitignore
+├── requirements.txt
+├── README.md
 │
-├── README.md             # Documentação do projeto
-│
-└── src/                  # Código-fonte principal do aplicativo
-    ├──🔥 main.py           # Ponto de entrada do aplicativo (inicia o Flet)
+└── src/
+    ├── main.py
     │
-    ├──🔥 database/         # Gerenciamento de dados locais
+    ├── database/
     │   ├── __init__.py
-    │   └── local_db.py   # Conexão com o banco local (ex: SQLite)
+    │   └── local_db.py
     │
-    ├──🔥 security/         # Onde a mágica da segurança acontece
+    ├── security/
     │   ├── __init__.py
-    │   └── crypto.py     # Funções para criptografar e descriptografar dados antes de salvar
+    │   └── crypto.py
     │
-    ├──🔥 views/
-    ├── ├──modules/          
-        ├── ├──├── cofre_views.py        
-        ├── ├──├── eventos_views.py    
-        ├── ├──├── finance_views.py
+    ├── views/
+    │   ├── modules/
+    │   │   ├── vault_views.py
+    │   │   ├── events_views.py
+    │   │   └── finance_views.py
+    │   │
     │   ├── __init__.py
-    │   ├── login_view.py # Tela de autenticação local
-    │   └── home_view.py  # Tela principal
+    │   ├── login_view.py
+    │   └── home_view.py
     │
-    └──🔥 utils/            # Funções de ajuda (verificadores, formatadores)
-        └── updater.py    # Lógica futura para checar e baixar atualizações online
+    └── utils/
+        └── updater.py
